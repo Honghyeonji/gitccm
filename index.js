@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 
 const inquirer = require("inquirer");
-const simpleGit = require("simple-git");
-const git = simpleGit();
+const { execSync } = require("child_process");
 const prompt = inquirer.createPromptModule();
 
 const commitList = [
@@ -22,31 +21,35 @@ const commitList = [
 ];
 
 const runCommand = async () => {
-  const { type } = await prompt([
-    {
-      type: "list",
-      name: "type",
-      message: "Choose commit type:",
-      choices: commitList,
-    },
-  ]);
-
-  const { msg } = await prompt([
-    {
-      type: "input",
-      name: "msg",
-      message: `Enter your commit message: ${type}`,
-      validate: (input) => (input ? true : "Commit message cannot be empty."),
-    },
-  ]);
-
-  const commitMsg = `${type}${msg}`;
-
   try {
-    await git.commit(commitMsg);
-    console.log(`Successfully committed with message: "${commitMsg}"`);
+    const { type } = await prompt([
+      {
+        type: "list",
+        name: "type",
+        message: "Choose commit type:",
+        choices: commitList,
+      },
+    ]);
+
+    const { msg } = await prompt([
+      {
+        type: "input",
+        name: "msg",
+        message: `Enter your commit message: ${type}`,
+        validate: (input) => (input ? true : "Commit message cannot be empty."),
+      },
+    ]);
+
+    const commitMsg = `${type}${msg}`;
+
+    try {
+      execSync(`git commit -m "${commitMsg}"`, { stdio: "inherit" });
+    } catch (error) {
+      process.exit(1);
+    }
   } catch (error) {
     console.error("Failed to commit:", error.message);
+    process.exit(1);
   }
 };
 
